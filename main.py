@@ -50,6 +50,7 @@ def do(i, shop, test):
         min_dist, nn_shop_id = get_nearest_shop_id(test.ix[i]['longitude'], test.ix[i]['latitude'], shop_ids_by_mall_id)
         test.loc[i,'shop_id']= nn_shop_id
         print ("sample_num: ", i, "/", n_samples, " min_dist:", min_dist, " shop_id:", test.ix[i]['shop_id'])
+
 if __name__ == '__main__':
     ants_dir = "../ants_data/"
     shop = pd.read_csv(ants_dir+'训练数据-ccf_first_round_shop_info.csv')
@@ -57,9 +58,6 @@ if __name__ == '__main__':
     test = pd.read_csv(ants_dir+'AB榜测试集-evaluation_public.csv')
     test['shop_id']='s_xxx'
     n_samples = test.shape[0]
-    pool = Pool()
     for i in range(n_samples):
-         pool.apply_async(do, (i, shop, test))
-    pool.close()
-    pool.join()
+        do(i, shop, test)
     test.ix[:,['row_id','shop_id']].to_csv("results.csv", index=False)
