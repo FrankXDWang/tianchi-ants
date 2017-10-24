@@ -57,7 +57,39 @@ if __name__ == '__main__':
     train = pd.read_csv(ants_dir+'训练数据-ccf_first_round_user_shop_behavior.csv')
     test = pd.read_csv(ants_dir+'AB榜测试集-evaluation_public.csv')
     test['shop_id']='s_xxx'
-    n_samples = test.shape[0]
-    for i in range(n_samples):
-        do(i, shop, test)
-    test.ix[:,['row_id','shop_id']].to_csv("results.csv", index=False)
+    mall_ids = list( shop.ix[:,'mall_id'].unique() )
+    
+    counter = 0
+    total = len(mall_ids)
+    for mall_id in mall_ids[:2]:
+        shop_ids_by_mall_id = shop[shop.mall_id == mall_id]
+        
+        #print(shop_ids_by_mall_id)
+        data_with_mall_id = pd.merge(shop_ids_by_mall_id, train.ix[:,['wifi_infos','shop_id']],on='shop_id')
+        
+        # get the number of classes
+        n_classes = len(data_with_mall_id.ix[:,'shop_id'].unique())
+        _n_samples = data_with_mall_id.shape[0]
+        # get the columns of samples
+        wifis = set()
+        for wifi in data_with_mall_id.ix[:,'wifi_infos']:
+            for _wifi in wifi.split(';'):
+                wifis.add(_wifi.split('|')[0])
+        
+        # add more features into wifis here
+        new_X = pd.DataFrame(columns=list(wifis))
+        new_Y = pd.DataFrame(columns=['shop_id'])
+        _counter = 0
+        for i in range(_n_samples):
+                shop_id = data_with_mall_id.ix[i]['shop_id']
+                new_Y.loc[i, 'shop_id'] = shop_id
+                wifi_infos = data_with_mall_id.ix[i]['wifi_infos'].split(';')
+                for wifi in wifi_infos:
+                    _wifi = wifi.split('|')
+                    new_X.loc[i, _wifi[0]]=_wifi[1]
+                _counter += 1
+                print(_counter, "/",_n_samples,"/",counter, "/", total, "/", str(mall_id))
+        train_data_by_mall_id = pd.concat([new_X, new_Y], axis=1)
+        # shuffle samples
+        train_data_by_mall_id=train_data_by_mall_id.sample(frac=1)
+        train_data_by_mall_id.to_csv("data/"+str(mall_id)+'.csv',index=False)
