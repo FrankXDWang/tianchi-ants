@@ -1,19 +1,31 @@
+import os
 import pandas as pd
 import numpy as np
-import os
+from collections import Counter
 fileDir = 'data/'
 saveDir = 'ordered_data/'
 filenames = os.listdir(fileDir)
-counter = 0
+_counter = 0
 for filename in filenames:
     train = pd.read_csv(fileDir+filename, header=None)
     sz = train.shape
+    _counter += 1
     for i in range(sz[0]):
-        print(i,sz[0],counter,filename)
+        print(i,sz[0],filename.split('.')[0],_counter)
         nan_number = train.ix[i,1:][train.ix[i,1:].isnull()].shape[0]
         ordered_list=sorted(train.ix[i,1:][~train.ix[i,1:].isnull()],key=lambda data: int(data.split(':')[0]))
+        # filter duplicate 
+        filtered_ordered_list = []
+        counter = Counter([elem.split(':')[0] for elem in ordered_list])
+        for k,v in counter.items():
+            _list = [elem for elem in ordered_list if elem.split(':')[0] == k]
+            if v == 1:
+                filtered_ordered_list.extend(_list)
+            if v > 1:
+                nan_number += v - 1
+                filtered_ordered_list.append(_list[0])
         for j in range(nan_number):
-            ordered_list.append('')
-        train.at[i,1:]= ordered_list
+            filtered_ordered_list.append('')
+        train.ix[i,1:]= filtered_ordered_list
     train.to_csv(saveDir+filename, header=None, index=False, sep =' ')
     
