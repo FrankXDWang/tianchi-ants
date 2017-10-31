@@ -1,25 +1,30 @@
-import xgboost as xgb
-import numpy as np
-from sklearn.datasets import load_svmlight_file
 import os
 import sys
+import numpy as np
+import xgboost as xgb
+from sklearn.datasets import load_svmlight_file
 from optparse import OptionParser
 
 if __name__ == '__main__':
-    
     parser = OptionParser()
     parser.add_option('-s','--start',dest='start',default='0')
     parser.add_option('-e','--end',dest='end',default='20')
+    parser.add_option('-m','--mall', dest='mall', default='')
     (options, args) = parser.parse_args(sys.argv)
     s = int(options.start)
     e = int(options.end)
-    file_dir = 'ordered_data/'
-    model_dir = 'model/'
+    mall_id = options.mall
+    file_dir = 'data/ordere_wifi_data/'
+    model_dir = 'cv_model/'
     filenames = os.listdir(file_dir)
     num = len(filenames)
     counter = 0
-    #filenames = ['m_5529.csv']
-    #for mall_file in filenames:
+    filenames = [str(mall_id)+'.csv']
+    
+    # test
+    #filenames = []
+    #or mall_file in filenames:
+    
     for mall_file in filenames[s:e]:
         print(mall_file+'*'*30+'\n')
         counter += 1
@@ -28,7 +33,7 @@ if __name__ == '__main__':
         train = raw_data[0].toarray()
         label = raw_data[1]
         sz = train.shape
-        kfolds = 0.8
+        kfolds = 0.9
         train_X = train[:int(sz[0] * kfolds), :]
         test_X = train[int(sz[0] * kfolds):, :]
         train_Y = label[:int(sz[0] * kfolds)]
@@ -39,43 +44,15 @@ if __name__ == '__main__':
 
         num_class = int( max(label) ) + 1
 
-        params = {'max_depth':3, 'eta':0.1, 'num_class':num_class, 'objective':'multi:softmax','nthread':4, 'silent':0}
-        num_boost_round = 5
-        watchlist = [(xtrain, 'train'),(xtest, 'test')]
-        model = xgb.train(params, xtrain, num_boost_round, watchlist)
+        params = {'max_depth':6, 'eta':0.1, 'num_class':num_class, 'objective':'multi:softmax','nthread':4, 'silent':0}
+        num_boost_round = 30
+        #watchlist = [(xtrain, 'train'),(xtest, 'test')]
+        model = xgb.train(params, xtrain, num_boost_round)
         pred = model.predict(xtest)
         error_rate = np.sum(pred != test_Y) / test_Y.shape[0]
-        print('Test error using softmax = {}'.format(1-error_rate))
+        #print('Test acc using softmax = {}'.format(1-error_rate))
         with open('test.csv', 'a') as f:
             f.write(str(mall_file.split('.')[0])+','+str(1-error_rate)+'\n')
         model_path = model_dir+str( mall_file.split('.')[0] )+'.model'
         model.save_model(model_path)
-        #model = xgb.Booster()
-        #model.load_model(model_path)
-
-        #pred = model.predict(xtest)
-        #print(pred)
-        #error_rate = np.sum(pred != test_Y) / test_Y.shape[0]
-        #print('Test error using softmax = {}'.format(error_rate))
-
-        #min_merror = float("Inf")
-        #best_params = None
-        #for eta in [.05, .01, .005]:
-        #    print("CV with eta={}".format(eta))
-        #    params['eta'] = eta
-        #    cv_results = xgb.cv(
-        #            params,
-        #            xtrain,
-        #            num_boost_round=num_boost_round,
-        #            seed=42,
-        #            nfold=3,
-        #            metrics=['merror'],
-        #            early_stopping_rounds=2
-        #          )
-        #    mean_merror = cv_results['test-merror-mean'].min()
-        #    boost_rounds = cv_results['test-merror-mean'].argmin()
-        #    print("\tMERROR {} for {} rounds\n".format(mean_merror, boost_rounds))
-        #    if mean_merror < min_merror:
-        #        min_merror = mean_merror
-        #        best_params = eta
-        #print("Best params: {}, MERROR: {}".format(best_params, min_merror))
+        
