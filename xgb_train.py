@@ -1,4 +1,3 @@
-
 import os
 import sys
 import numpy as np
@@ -15,8 +14,8 @@ if __name__ == '__main__':
     s = int(options.start)
     e = int(options.end)
     mall_id = options.mall
-    file_dir = 'data/ordere_wifi_data/'
-    model_dir = 'cv_model/'
+    file_dir = 'data/order_wifi_data/'
+    model_dir = 'model/xgb_model/'
     filenames = os.listdir(file_dir)
     num = len(filenames)
     counter = 0
@@ -33,6 +32,12 @@ if __name__ == '__main__':
         raw_data = load_svmlight_file(file_dir+mall_file)
         train = raw_data[0].toarray()
         label = raw_data[1]
+        
+        #shuffle data
+        permutation = np.random.permutation(label.shape[0])
+        train = train[permutation,:]
+        label = label[permutation]
+
         sz = train.shape
         kfolds = 0.9
         train_X = train[:int(sz[0] * kfolds), :]

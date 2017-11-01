@@ -39,4 +39,4 @@ if __name__ == '__main__':
         _time_stamps = pd.DataFrame(time_stamps)
         rst = pd.concat((data_with_mall_id.ix[:, ['shop_id','longitude_y', 'latitude_y']],_time_stamps), axis=1)
         rst.columns = ['shop_id', 'longitude_y', 'latitude_y', 'time_stamp']
-        rst.to_csv("tll_data/"+str(mall_id)+'.csv',index=False,header=None)
+        rst.to_csv("data/tll_data/"+str(mall_id)+'.csv',index=False,header=None)
